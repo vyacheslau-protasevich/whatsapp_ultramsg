@@ -90,6 +90,7 @@ def send_whatsapp_message(format: str, config: dict, update_progress_callback=No
                             continue
 
                     response = requests.post(base_url, data=data).json()
+                    # print(response)
 
                     if update_progress_callback:
                         update_progress_callback(current_message, total_messages)
@@ -132,7 +133,7 @@ def send_whatsapp_photo(format: str, config: dict, update_progress_callback=None
             current_message = 1
             sent_count = 0
 
-            base_url = f"https://api.ultramsg.com/{ultramsg_instance_id}/messages/chat?token={ultramsg_token}"
+            base_url = f"https://api.ultramsg.com/{ultramsg_instance_id}/messages/image?token={ultramsg_token}"
 
             tags = extract_tags(format)
 
@@ -172,7 +173,7 @@ def send_whatsapp_photo(format: str, config: dict, update_progress_callback=None
                                 f"Message was not sent to: {i['Phone number']}, because photo url is missing")
                             continue
 
-                    response = requests.post(base_url, data=data)
+                    response = requests.post(base_url, data=data).json()
                     # print(response)
 
                     if update_progress_callback:

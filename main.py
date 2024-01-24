@@ -328,6 +328,7 @@ class MainApplication(tk.Tk):
             "message_delay": os.environ['MESSAGE_DELAY'],
             "sheet_number": os.environ['SHEET_NUMBER']
         }
+        # print(config)
         send_whatsapp_photo(format=" ".join(message_content),
                             update_progress_callback=self.update_progress,
                             write_log_callback=self.write_log,
@@ -356,6 +357,7 @@ class MainApplication(tk.Tk):
             "message_delay": os.environ['MESSAGE_DELAY'],
             "sheet_number": os.environ['SHEET_NUMBER']
         }
+        # print(config)
         send_whatsapp_message(format=" ".join(message_content),
                               update_progress_callback=self.update_progress,
                               write_log_callback=self.write_log,
