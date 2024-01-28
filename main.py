@@ -5,16 +5,17 @@ from tkinter import filedialog
 
 import os
 
-from send_messages import send_whatsapp_message, send_whatsapp_photo
+from send_messages import send_whatsapp_message, send_whatsapp_photo, send_whatsapp_video
 from settings import save_settings_to_file, load_settings_from_file
 
 
 class MessageConstructor(tk.Frame):
-    def __init__(self, master, title, with_photo=True, max_blocks=6, send_action=None, *args, **kwargs):
+    def __init__(self, master, title, with_photo=False, with_video=False, max_blocks=6, send_action=None, *args, **kwargs):
         super().__init__(master, *args, **kwargs)
         self.configure(bg="#f7f7f7")
         self.master = master
         self.with_photo = with_photo
+        self.with_video = with_video
         self.max_blocks = max_blocks
         self.block_count = 0
         self.block_type = tk.StringVar(value="Name")
@@ -26,6 +27,8 @@ class MessageConstructor(tk.Frame):
 
         if self.with_photo:
             self.add_block("Photo (default)", is_photo=True)
+        elif self.with_video:
+            self.add_block("Video (default)", is_video=True)
 
     def init_ui(self):
         # Custom font
@@ -44,7 +47,14 @@ class MessageConstructor(tk.Frame):
         side_panel = tk.Frame(self.container, bg="#f7f7f7")
         side_panel.pack(side=tk.LEFT, fill=tk.Y, padx=10, pady=10)
 
-        block_types = ["Name", "Text" if not self.with_photo else "Caption", "Custom text"]
+        block_types = ["Name", "Custom text"]
+        if self.with_photo:
+            block_types.append("Photo caption")
+        elif self.with_video:
+            block_types.append("Video caption")
+        else:
+            block_types.append("Text")
+
         for block in block_types:
             radio_button = tk.Radiobutton(side_panel, text=block, variable=self.block_type, value=block,
                                           bg="#f7f7f7", selectcolor="#f0f0f0")
@@ -68,7 +78,7 @@ class MessageConstructor(tk.Frame):
         if self.block_count >= self.max_blocks:
             self.add_button.pack_forget()
 
-    def add_block(self, block_type, is_photo=False):
+    def add_block(self, block_type, is_photo=False, is_video=False):
         block_frame = tk.Frame(self.constructor_area, borderwidth=1, relief=tk.SOLID)
         block_frame.pack(side=tk.LEFT, padx=5, pady=5)
 
@@ -82,7 +92,7 @@ class MessageConstructor(tk.Frame):
             label = tk.Label(block_frame, text=block_type)
             label.pack(side=tk.LEFT)
 
-        if not is_photo:
+        if not is_photo or is_video:
             delete_button = tk.Button(block_frame, text="x", command=lambda: self.delete_block(block_frame, block_data))
             delete_button.pack(side=tk.LEFT)
 
@@ -124,6 +134,10 @@ class MainApplication(tk.Tk):
         self.no_photo_frame = MessageConstructor(self, "Message without Photo", with_photo=False, max_blocks=5,
                                                  send_action=self.send_text)
         self.no_photo_frame.pack(pady=10, padx=10, fill=tk.X)
+
+        self.vide_frame = MessageConstructor(self, "Message with video", with_video=True, max_blocks=5,
+                                             send_action=self.send_video)
+        self.vide_frame.pack(pady=10, padx=10, fill=tk.X)
         self.setup_ui()
 
     def setup_ui(self):
@@ -300,7 +314,7 @@ class MainApplication(tk.Tk):
             current_section.container.pack_forget()
             current_section.is_expanded = False
         else:
-            for section in [self.photo_frame, self.no_photo_frame]:
+            for section in [self.photo_frame, self.no_photo_frame, self.vide_frame]:
                 if section.is_expanded:
                     section.container.pack_forget()
                     section.is_expanded = False
@@ -315,8 +329,8 @@ class MainApplication(tk.Tk):
                 # Retrieve text from the Text widget
                 text = block["entry"].get("1.0", "end-1c")
                 # Replace occurrences of '\n' with actual newline characters
-                processed_text = text.replace("\\n", "\n")
-                message_content.append("{{" + processed_text + "}}")
+                # processed_text = text.replace("\\n", "\n")
+                message_content.append("{{" + text + "}}")
             else:
                 message_content.append("{{" + block["type"] + "}}")
 
@@ -337,6 +351,36 @@ class MainApplication(tk.Tk):
                             config=config
                             )
 
+    def send_video(self):
+        self.clear_logs()
+        message_content = []
+        for block in self.vide_frame.blocks:
+            if block["type"] == "Custom text":
+                # Retrieve text from the Text widget
+                text = block["entry"].get("1.0", "end-1c")
+                # Replace occurrences of '\n' with actual newline characters
+                # processed_text = text.replace("\\n", "\n")
+                message_content.append("{{" + text + "}}")
+            else:
+                message_content.append("{{" + block["type"] + "}}")
+
+        config = {
+            "ultramsg_token": os.environ['ULTRAMSG_TOKEN'],
+            "ultramsg_instance_id": os.environ['ULTRAMSG_INSTANCE_ID'],
+            "service_account_file": os.environ['SERVICE_ACCOUNT_FILE'],
+            "spreadsheet_id": os.environ['SPREADSHEET_ID'],
+            "message_delay": os.environ['MESSAGE_DELAY'],
+            "sheet_number": os.environ['SHEET_NUMBER']
+        }
+        # print(config)
+        send_whatsapp_video(format=" ".join(message_content),
+                            update_progress_callback=self.update_progress,
+                            write_log_callback=self.write_log,
+                            completion_callback=self.show_completion_popup,
+                            error_callback=self.show_error_popup,
+                            config=config
+                            )
+
     def send_text(self):
         self.clear_logs()
         message_content = []
@@ -345,7 +389,7 @@ class MainApplication(tk.Tk):
                 # Retrieve text from the Text widget
                 text = block["entry"].get("1.0", "end-1c")
                 # Replace occurrences of '\n' with actual newline characters
-                processed_text = text.replace("\\n", "\n")
+                # processed_text = text.replace("\\n", "\n")
                 message_content.append("{{" + text + "}}")
             else:
                 message_content.append("{{" + block["type"] + "}}")

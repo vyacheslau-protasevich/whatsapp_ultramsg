@@ -6,7 +6,7 @@ from google.auth.exceptions import RefreshError
 
 def read_sheets(service_account_file, spreadsheet_id, sheet_number, error_callback=None):
     # service_account_file = "excel-whatsapp-4a59fd53a499.json"
-    spreadsheet_id = "15Duz9TIRQ_Ybgxo6VmXQL6pNnmvXQUh98U3cZLCWScs"
+    # spreadsheet_id = "15Duz9TIRQ_Ybgxo6VmXQL6pNnmvXQUh98U3cZLCWScs"
     range_name = f"Sheet{sheet_number}"
     creds = Credentials.from_service_account_file(
         service_account_file,
@@ -36,6 +36,7 @@ def read_sheets(service_account_file, spreadsheet_id, sheet_number, error_callba
                 row_data += [None] * (len(headers) - len(row_data))
                 data.append(dict(zip(headers, row_data)))
 
+        print(data)
         return data
 
     except RefreshError as e:
